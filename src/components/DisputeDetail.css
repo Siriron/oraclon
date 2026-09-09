@@ -1,0 +1,243 @@
+.dispute-detail__loading,
+.dispute-detail__error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--parchment-dim);
+  padding: 40px 0;
+}
+
+.dispute-detail__error {
+  color: var(--disputed);
+  background: rgba(201, 99, 58, 0.12);
+  border: 1px solid rgba(201, 99, 58, 0.3);
+  padding: 14px 18px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.dispute-detail__heading {
+  margin-bottom: 32px;
+}
+
+.dispute-detail__id {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--lantern-dim);
+  font-size: 0.95rem;
+}
+
+.dispute-detail__heading h2 {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-style: italic;
+  color: var(--lantern-bright);
+  text-transform: capitalize;
+  margin: 6px 0 8px;
+}
+
+.dispute-detail__target-date {
+  color: var(--parchment-dim);
+  font-size: 0.88rem;
+}
+
+.dispute-detail__claims {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.claim-card {
+  border: 1px solid rgba(232, 169, 76, 0.18);
+  background: rgba(43, 27, 16, 0.5);
+  border-radius: var(--radius-card);
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.claim-card h3 {
+  font-size: 1.05rem;
+  color: var(--parchment);
+  margin-bottom: 4px;
+}
+
+.claim-card__label {
+  font-size: 0.78rem;
+  color: var(--parchment-dim);
+  margin-bottom: 14px;
+}
+
+.claim-card__value {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  color: var(--lantern-bright);
+  margin-bottom: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.claim-card__vs {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--lantern-dim);
+  font-size: 1.1rem;
+}
+
+.accuracy-badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 3px;
+}
+
+.accuracy-badge--accurate {
+  color: var(--verified);
+  background: rgba(111, 174, 102, 0.12);
+  border: 1px solid rgba(111, 174, 102, 0.3);
+}
+
+.accuracy-badge--inaccurate {
+  color: var(--disputed);
+  background: rgba(201, 99, 58, 0.12);
+  border: 1px solid rgba(201, 99, 58, 0.3);
+}
+
+.accuracy-badge--pending {
+  color: var(--pending);
+  background: rgba(203, 178, 135, 0.08);
+  border: 1px solid rgba(203, 178, 135, 0.22);
+}
+
+.dispute-detail__reasoning {
+  border-left: 2px solid var(--lantern-dim);
+  padding: 4px 0 4px 20px;
+  margin-bottom: 32px;
+}
+
+.dispute-detail__reasoning h3 {
+  font-size: 0.9rem;
+  color: var(--lantern-dim);
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dispute-detail__reasoning p {
+  color: var(--parchment);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.dispute-detail__chain-status {
+  border-top: 1px solid rgba(232, 169, 76, 0.15);
+  border-bottom: 1px solid rgba(232, 169, 76, 0.15);
+  padding: 16px 0;
+  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chain-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.88rem;
+}
+
+.chain-status-row__label {
+  color: var(--parchment-dim);
+  font-weight: 500;
+  width: 110px;
+  flex-shrink: 0;
+}
+
+.chain-status-row__value {
+  color: var(--parchment);
+  font-weight: 500;
+}
+
+.chain-status-row__value--resolved {
+  color: var(--verified);
+}
+
+.chain-status-row__link {
+  margin-left: auto;
+  color: var(--lantern-dim);
+  text-decoration: none;
+  font-size: 0.82rem;
+}
+
+.chain-status-row--fine-print {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.dispute-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.dispute-detail__action-btn {
+  appearance: none;
+  border: 1px solid rgba(232, 169, 76, 0.3);
+  background: rgba(232, 169, 76, 0.08);
+  color: var(--parchment);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 12px 22px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.dispute-detail__action-btn:hover:not(:disabled) {
+  background: rgba(232, 169, 76, 0.16);
+}
+
+.dispute-detail__action-btn--primary {
+  background: rgba(232, 169, 76, 0.18);
+  border-color: var(--lantern-dim);
+  color: var(--lantern-bright);
+}
+
+.dispute-detail__action-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.dispute-detail__relay-note {
+  background: rgba(46, 42, 74, 0.35);
+  border: 1px solid rgba(74, 69, 112, 0.5);
+  border-radius: 4px;
+  padding: 16px 20px;
+  font-size: 0.85rem;
+  color: var(--parchment-dim);
+  line-height: 1.55;
+}
+
+.dispute-detail__relay-note code {
+  background: rgba(21, 13, 7, 0.6);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--lantern-bright);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .dispute-detail__claims {
+    grid-template-columns: 1fr;
+  }
+  .claim-card__vs {
+    display: none;
+  }
+  .chain-status-row {
+    flex-wrap: wrap;
+  }
+  .chain-status-row__link {
+    margin-left: 0;
+  }
+}

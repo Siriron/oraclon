@@ -1,0 +1,132 @@
+.shell {
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+}
+
+.shell__backdrop {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: 50% 30%;
+  background-repeat: no-repeat;
+  z-index: -2;
+}
+
+.shell__scrim {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(21, 13, 7, 0.88) 0%,
+    rgba(21, 13, 7, 0.82) 12%,
+    rgba(21, 13, 7, 0.86) 100%
+  );
+  z-index: -1;
+}
+
+.shell__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 18px clamp(20px, 4vw, 48px);
+  background: rgba(21, 13, 7, 0.7);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(232, 169, 76, 0.15);
+}
+
+.shell__brand {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.4rem;
+  color: var(--lantern-bright);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.shell__nav {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+}
+
+.shell__nav a {
+  text-decoration: none;
+  color: var(--parchment-dim);
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.shell__nav a:hover {
+  color: var(--lantern-bright);
+}
+
+.shell__wallet-btn {
+  appearance: none;
+  border: 1px solid var(--lantern-dim);
+  background: transparent;
+  color: var(--lantern-bright);
+  padding: 9px 18px;
+  border-radius: 3px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.shell__wallet-btn:hover:not(:disabled) {
+  background: rgba(232, 169, 76, 0.12);
+}
+
+.shell__wallet-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.shell__wallet-connected {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--parchment);
+  background: rgba(232, 169, 76, 0.1);
+  border: 1px solid rgba(232, 169, 76, 0.25);
+  padding: 8px 14px;
+  border-radius: 3px;
+}
+
+.shell__error-banner {
+  background: rgba(201, 99, 58, 0.18);
+  border-bottom: 1px solid rgba(201, 99, 58, 0.4);
+  color: var(--parchment);
+  padding: 10px clamp(20px, 4vw, 48px);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.shell__main {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 48px) clamp(20px, 4vw, 48px) 80px;
+}
+
+@media (max-width: 640px) {
+  .shell__header {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .shell__nav {
+    order: 3;
+    width: 100%;
+    gap: 20px;
+    padding-top: 8px;
+  }
+
+  .shell__backdrop {
+    background-position: 62% 25%;
+  }
+}
