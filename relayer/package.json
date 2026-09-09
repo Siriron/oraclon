@@ -1,0 +1,16 @@
+{
+  "name": "oraclon-relayer",
+  "version": "1.0.0",
+  "description": "One-shot relayer: reads a resolved dispute verdict from the Oraclon GenVM contract and relays it to OraclonEscrow.sol on Base Sepolia.",
+  "type": "module",
+  "main": "relay.js",
+  "scripts": {
+    "relay": "node relay.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "genlayer-js": "^1.1.7",
+    "viem": "^2.21.0",
+    "dotenv": "^16.4.5"
+  }
+}
