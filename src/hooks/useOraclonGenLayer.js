@@ -48,7 +48,7 @@ export function useOraclonGenLayer() {
       const raw = await readClient.readContract({
         address: GENLAYER_CONTRACT_ADDRESS,
         functionName: 'get_dispute',
-        args: [String(disputeId)],
+        args: [BigInt(disputeId)],
       });
       return typeof raw === 'string' ? JSON.parse(raw) : raw;
     },
@@ -73,11 +73,11 @@ export function useOraclonGenLayer() {
         functionName: 'create_dispute',
         args: [
           protocolSlug,
-          String(targetDate),
+          BigInt(targetDate),
           agentAAddress,
-          String(agentAClaimedTvlE6),
+          BigInt(agentAClaimedTvlE6),
           agentBAddress,
-          String(agentBClaimedTvlE6),
+          BigInt(agentBClaimedTvlE6),
         ],
         value: BigInt(0),
       });
@@ -101,7 +101,7 @@ export function useOraclonGenLayer() {
       const txHash = await client.writeContract({
         address: GENLAYER_CONTRACT_ADDRESS,
         functionName: 'resolve_dispute',
-        args: [String(disputeId)],
+        args: [BigInt(disputeId)],
         value: BigInt(0),
       });
       try {
