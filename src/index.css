@@ -1,0 +1,104 @@
+/* ---------------------------------------------------------------------
+   Oraclon — design tokens
+   Palette pulled from the illustrated artwork itself (lantern-lit
+   archivist's study), not a stock accent-color choice. Dusk indigo is
+   the only cool note, reserved for the outer world beyond the doorway.
+--------------------------------------------------------------------- */
+
+:root {
+  --ink-black: #150d07;
+  --walnut: #2b1b10;
+  --walnut-light: #3d281a;
+  --parchment: #e9d7b3;
+  --parchment-dim: #cbb287;
+  --lantern: #e8a94c;
+  --lantern-bright: #f5c979;
+  --lantern-dim: #a97a35;
+  --dusk: #2e2a4a;
+  --dusk-light: #4a4570;
+  --ember: #c9633a;
+  --verified: #6fae66;
+  --disputed: #c9633a;
+  --pending: #cbb287;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --radius-card: 6px;
+  --shadow-lifted: 0 12px 40px rgba(10, 6, 3, 0.55);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--parchment);
+  background: var(--ink-black);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  margin: 0;
+  color: var(--parchment);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+/* Visible keyboard focus — never removed */
+:focus-visible {
+  outline: 2px solid var(--lantern);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::selection {
+  background: var(--lantern);
+  color: var(--ink-black);
+}
+
+/* Scrollbar — subtle, warm-toned, not browser default grey */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--ink-black);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--walnut-light);
+  border-radius: 5px;
+}
