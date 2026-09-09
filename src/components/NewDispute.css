@@ -14,6 +14,23 @@
   font-size: 0.95rem;
   line-height: 1.55;
   max-width: 56ch;
+  margin-bottom: 14px;
+}
+
+.new-dispute__fill-test {
+  appearance: none;
+  border: 1px dashed rgba(232, 169, 76, 0.35);
+  background: transparent;
+  color: var(--lantern-dim);
+  font-size: 0.82rem;
+  padding: 8px 14px;
+  border-radius: 4px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.new-dispute__fill-test:hover {
+  color: var(--lantern-bright);
+  border-color: var(--lantern);
 }
 
 .new-dispute__form {

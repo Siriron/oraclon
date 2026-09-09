@@ -17,21 +17,34 @@ const STEPS = {
   FAILED: 'failed',
 };
 
+const EMPTY_FORM = {
+  protocolSlug: '',
+  targetDate: '',
+  agentAAddress: '',
+  agentAClaimedTvlE6: '',
+  agentBAddress: '',
+  agentBClaimedTvlE6: '',
+  stakeEth: '0.01',
+};
+
+// The one already-proven combination from live testing (see project
+// notes) — offered as an explicit, opt-in fill, never as the silent
+// default, so nobody re-files the same proven dispute by accident
+// without realizing the form was pre-populated.
+const PROVEN_TEST_VALUES = {
+  protocolSlug: 'aave',
+  targetDate: '1756684800',
+  agentAClaimedTvlE6: '18405000000000000',
+  agentBClaimedTvlE6: '30250000000000000',
+};
+
 export default function NewDispute() {
   const navigate = useNavigate();
   const { account } = useWallet();
   const { createDispute: createOnGenLayer, listDisputes } = useOraclonGenLayer();
   const { createDispute: createOnBase } = useOraclonEscrow();
 
-  const [form, setForm] = useState({
-    protocolSlug: 'aave',
-    targetDate: '1756684800',
-    agentAAddress: '',
-    agentAClaimedTvlE6: '18405000000000000',
-    agentBAddress: '',
-    agentBClaimedTvlE6: '30250000000000000',
-    stakeEth: '0.01',
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const [step, setStep] = useState(STEPS.FORM);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -40,6 +53,10 @@ export default function NewDispute() {
   const [disputeId, setDisputeId] = useState(null);
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const fillProvenTestValues = () => {
+    setForm((f) => ({ ...f, ...PROVEN_TEST_VALUES }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,17 +93,30 @@ export default function NewDispute() {
       }
 
       setStep(STEPS.BASE_PENDING);
-      const baseResultData = await createOnBase({
-        agentA: form.agentAAddress,
-        agentB: form.agentBAddress,
-        stakeEth: form.stakeEth,
-        agentAClaimedTvlE6: form.agentAClaimedTvlE6,
-        agentBClaimedTvlE6: form.agentBClaimedTvlE6,
-        protocolSlug: form.protocolSlug,
-        targetDate: form.targetDate,
-      });
-      setBaseResult(baseResultData);
-      setStep(STEPS.DONE);
+      try {
+        const baseResultData = await createOnBase({
+          agentA: form.agentAAddress,
+          agentB: form.agentBAddress,
+          stakeEth: form.stakeEth,
+          agentAClaimedTvlE6: form.agentAClaimedTvlE6,
+          agentBClaimedTvlE6: form.agentBClaimedTvlE6,
+          protocolSlug: form.protocolSlug,
+          targetDate: form.targetDate,
+        });
+        setBaseResult(baseResultData);
+        setStep(STEPS.DONE);
+      } catch (baseErr) {
+        // GenLayer's half already exists at this point — don't let the
+        // person think nothing happened and re-submit, which would
+        // create a second, disconnected GenLayer dispute.
+        setErrorMsg(
+          `GenLayer recorded this dispute (id ${disputeId ?? '— check the Ledger'}), but writing to Base Sepolia failed: ${
+            baseErr?.message || 'unknown error'
+          }. Do not re-submit this form — instead, create the matching Base Sepolia dispute separately with identical protocol_slug and target_date, or contact support with the GenLayer dispute id above.`
+        );
+        setStep(STEPS.FAILED);
+        return;
+      }
     } catch (err) {
       setErrorMsg(err?.message || 'Something went wrong while filing the claim.');
       setStep(STEPS.FAILED);
@@ -141,6 +171,9 @@ export default function NewDispute() {
           Two agents, one true record. This writes to GenLayer first, then to
           Base Sepolia — both halves must exist before either agent can stake.
         </p>
+        <button type="button" className="new-dispute__fill-test" onClick={fillProvenTestValues}>
+          Fill known-good test values (Aave)
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="new-dispute__form">
