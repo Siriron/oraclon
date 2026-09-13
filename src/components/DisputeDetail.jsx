@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useOraclonGenLayer } from '../hooks/useOraclonGenLayer';
-import { useOraclonEscrow } from '../hooks/useOraclonEscrow';
-import { useWallet } from '../hooks/useWallet';
+import { useOraclonRegistry } from '../hooks/useOraclonRegistry';
 import {
   GENLAYER_CONTRACT_ADDRESS,
   GENLAYER_EXPLORER_ADDRESS_URL,
-  ESCROW_STATUS_LABELS,
+  REGISTRY_STATUS_LABELS,
 } from '../config/chains';
 import './DisputeDetail.css';
 
@@ -19,61 +18,44 @@ function microsToDisplay(micros) {
 
 function AccuracyBadge({ accuracy }) {
   if (accuracy === 'accurate' || accuracy === 1) {
-    return <span className="accuracy-badge accuracy-badge--accurate">Accurate</span>;
+    return <span className="accuracy-badge accuracy-badge--accurate">Verified Accurate</span>;
   }
   if (accuracy === 'inaccurate' || accuracy === 2) {
-    return <span className="accuracy-badge accuracy-badge--inaccurate">Inaccurate</span>;
+    return <span className="accuracy-badge accuracy-badge--inaccurate">Verified Inaccurate</span>;
   }
-  return <span className="accuracy-badge accuracy-badge--pending">Awaiting Judgment</span>;
+  return <span className="accuracy-badge accuracy-badge--pending">Awaiting Verification</span>;
 }
 
 export default function DisputeDetail() {
   const { id } = useParams();
-  const { account } = useWallet();
   const { getDispute, resolveDispute } = useOraclonGenLayer();
-  const { getDisputeCore, getDisputeClaims, stakeAsAgentA, stakeAsAgentB } = useOraclonEscrow();
+  const { getClaimCore, getClaimValues, recordVerdict } = useOraclonRegistry();
 
   const [glDispute, setGlDispute] = useState(null);
   const [baseCore, setBaseCore] = useState(null);
   const [baseClaims, setBaseClaims] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [actionState, setActionState] = useState({ busy: false, error: null });
+  const [recordResult, setRecordResult] = useState(null);
 
   const refresh = useCallback(async () => {
     try {
       const [gl, core, claims] = await Promise.all([
         getDispute(id),
-        getDisputeCore(id).catch(() => null),
-        getDisputeClaims(id).catch(() => null),
+        getClaimCore(id).catch(() => null),
+        getClaimValues(id).catch(() => null),
       ]);
       setGlDispute(gl);
       setBaseCore(core);
       setBaseClaims(claims);
     } catch (err) {
-      setLoadError(err?.message || 'Could not load this dispute.');
+      setLoadError(err?.message || 'Could not load this claim.');
     }
-  }, [id, getDispute, getDisputeCore, getDisputeClaims]);
+  }, [id, getDispute, getClaimCore, getClaimValues]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
-
-  const handleStake = async (side) => {
-    if (!account) {
-      setActionState({ busy: false, error: 'Connect a wallet first.' });
-      return;
-    }
-    setActionState({ busy: true, error: null });
-    try {
-      const stakeEth = baseCore ? (Number(baseCore.stakeAmount) / 1e18).toString() : '0.01';
-      if (side === 'A') await stakeAsAgentA(id, stakeEth);
-      else await stakeAsAgentB(id, stakeEth);
-      await refresh();
-      setActionState({ busy: false, error: null });
-    } catch (err) {
-      setActionState({ busy: false, error: err?.message || 'Stake failed.' });
-    }
-  };
 
   const handleResolve = async () => {
     setActionState({ busy: true, error: null });
@@ -82,7 +64,27 @@ export default function DisputeDetail() {
       await refresh();
       setActionState({ busy: false, error: null });
     } catch (err) {
-      setActionState({ busy: false, error: err?.message || 'Resolution failed.' });
+      setActionState({ busy: false, error: err?.message || 'Verification failed.' });
+    }
+  };
+
+  const handleRecordVerdict = async () => {
+    setActionState({ busy: true, error: null });
+    try {
+      const result = await recordVerdict(id, glDispute);
+      setRecordResult(result);
+      await refresh();
+      setActionState({ busy: false, error: null });
+    } catch (err) {
+      const message = err?.message || '';
+      const looksLikeAuthFailure =
+        message.includes('NotRelayer') || message.includes('reverted');
+      setActionState({
+        busy: false,
+        error: looksLikeAuthFailure
+          ? 'This transaction was rejected by the contract. Only the wallet registered as the relayer on OraclonRegistry.sol can record a verdict — check that the connected wallet matches that address.'
+          : message || 'Recording the verdict failed.',
+      });
     }
   };
 
@@ -99,7 +101,7 @@ export default function DisputeDetail() {
     );
   }
 
-  const escrowStatus = baseCore ? ESCROW_STATUS_LABELS[baseCore.status] : null;
+  const registryStatus = baseCore ? REGISTRY_STATUS_LABELS[baseCore.status] : null;
   const isResolved = glDispute.status === 'resolved';
 
   return (
@@ -114,14 +116,14 @@ export default function DisputeDetail() {
 
       <div className="dispute-detail__claims">
         <div className="claim-card">
-          <h3>Agent A</h3>
+          <h3>Claimant A</h3>
           <p className="claim-card__label">Claims current TVL</p>
           <p className="claim-card__value">{microsToDisplay(glDispute.agent_a_claimed_tvl_e6)}</p>
           <AccuracyBadge accuracy={glDispute.agent_a_accuracy} />
         </div>
         <div className="claim-card__vs">vs.</div>
         <div className="claim-card">
-          <h3>Agent B</h3>
+          <h3>Claimant B</h3>
           <p className="claim-card__label">Claims historical TVL</p>
           <p className="claim-card__value">{microsToDisplay(glDispute.agent_b_claimed_tvl_e6)}</p>
           <AccuracyBadge accuracy={glDispute.agent_b_accuracy} />
@@ -139,7 +141,7 @@ export default function DisputeDetail() {
         <div className="chain-status-row">
           <span className="chain-status-row__label">GenLayer</span>
           <span className={`chain-status-row__value chain-status-row__value--${glDispute.status}`}>
-            {glDispute.status === 'resolved' ? 'Resolved' : 'Awaiting Resolution'}
+            {glDispute.status === 'resolved' ? 'Verified' : 'Awaiting Verification'}
           </span>
           <a
             href={GENLAYER_EXPLORER_ADDRESS_URL(GENLAYER_CONTRACT_ADDRESS)}
@@ -150,10 +152,10 @@ export default function DisputeDetail() {
             Explorer ↗
           </a>
         </div>
-        {escrowStatus && (
+        {registryStatus && (
           <div className="chain-status-row">
             <span className="chain-status-row__label">Base Sepolia</span>
-            <span className="chain-status-row__value">{escrowStatus}</span>
+            <span className="chain-status-row__value">{registryStatus}</span>
           </div>
         )}
         {baseClaims && (
@@ -163,7 +165,7 @@ export default function DisputeDetail() {
               {baseClaims.protocolSlug === glDispute.protocol_slug &&
               String(baseClaims.targetDate) === String(glDispute.target_date)
                 ? 'Confirmed — both chains agree'
-                : 'Mismatch detected — do not resolve'}
+                : 'Mismatch detected — do not verify'}
             </span>
           </div>
         )}
@@ -172,29 +174,45 @@ export default function DisputeDetail() {
       {actionState.error && <p className="dispute-detail__error">{actionState.error}</p>}
 
       <div className="dispute-detail__actions">
-        {baseCore && baseCore.status < 2 && (
-          <>
-            <button className="dispute-detail__action-btn" onClick={() => handleStake('A')} disabled={actionState.busy}>
-              Stake as Agent A
-            </button>
-            <button className="dispute-detail__action-btn" onClick={() => handleStake('B')} disabled={actionState.busy}>
-              Stake as Agent B
-            </button>
-          </>
-        )}
         {!isResolved && glDispute.status === 'submitted' && (
           <button className="dispute-detail__action-btn dispute-detail__action-btn--primary" onClick={handleResolve} disabled={actionState.busy}>
-            {actionState.busy ? 'Resolving… this can take several minutes' : 'Resolve on GenLayer'}
+            {actionState.busy ? 'Verifying… this can take several minutes' : 'Verify on GenLayer'}
+          </button>
+        )}
+        {isResolved && baseCore && baseCore.status === 0 && (
+          <button className="dispute-detail__action-btn dispute-detail__action-btn--primary" onClick={handleRecordVerdict} disabled={actionState.busy}>
+            {actionState.busy ? 'Recording on Base Sepolia…' : 'Record Verdict on Base Sepolia'}
           </button>
         )}
       </div>
 
-      {isResolved && (
+      <p className="dispute-detail__no-stake-note">
+        No funds are staked or held anywhere in this system. This is a
+        factual verification record, not a wager — filing and verifying a
+        claim costs only network gas. No private key is ever used by this
+        app: every transaction, including recording a verdict, is signed
+        by whichever wallet is connected in your browser.
+      </p>
+
+      {isResolved && baseCore && baseCore.status === 0 && (
         <div className="dispute-detail__relay-note">
           <p>
-            This dispute has been judged on GenLayer. To settle stakes on Base
-            Sepolia, the verdict must be relayed — run{' '}
-            <code>node relay.js {id}</code> from the relayer package.
+            This claim has been verified on GenLayer. Recording the result
+            on Base Sepolia only works if your connected wallet is the
+            address registered as <code>relayer</code> on
+            <code> OraclonRegistry.sol</code> — anyone else's wallet will
+            have this transaction rejected by the contract itself.
+          </p>
+        </div>
+      )}
+
+      {recordResult && (
+        <div className="dispute-detail__relay-note">
+          <p>
+            Verdict recorded on Base Sepolia — transaction{' '}
+            <code>{recordResult.hash}</code>. Anyone can independently
+            compare this against the GenLayer verdict above to confirm the
+            two chains agree.
           </p>
         </div>
       )}

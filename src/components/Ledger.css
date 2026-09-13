@@ -1,5 +1,5 @@
 .ledger__heading {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .ledger__heading h2 {
@@ -12,6 +12,43 @@
 .ledger__heading p {
   color: var(--parchment-dim);
   font-size: 0.95rem;
+}
+
+.ledger__how-it-works {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.how-step {
+  border: 1px solid rgba(232, 169, 76, 0.16);
+  background: rgba(43, 27, 16, 0.4);
+  border-radius: var(--radius-card);
+  padding: 16px 18px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.how-step__num {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--lantern-bright);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.how-step__text {
+  font-size: 0.84rem;
+  color: var(--parchment-dim);
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .ledger__how-it-works {
+    grid-template-columns: 1fr;
+  }
 }
 
 .ledger__loading {
@@ -49,13 +86,28 @@
 
 .ledger__empty {
   text-align: center;
-  padding: 64px 20px;
+  padding: 56px 20px;
   color: var(--parchment-dim);
+}
+
+.ledger__empty-headline {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--lantern-bright);
+  margin-bottom: 10px;
+}
+
+.ledger__empty-body {
+  max-width: 46ch;
+  margin: 0 auto;
+  font-size: 0.9rem;
+  line-height: 1.55;
 }
 
 .ledger__empty-cta {
   display: inline-block;
-  margin-top: 14px;
+  margin-top: 18px;
   color: var(--lantern-bright);
   text-decoration: none;
   font-weight: 500;

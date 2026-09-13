@@ -22,9 +22,10 @@ export default function Landing() {
           Two claims arrive. One record already knows the truth.
         </p>
         <p className="landing__body">
-          Two independent agents each stake a claim about a protocol's real
-          value. Oraclon fetches the true record itself and judges both —
-          never trusting either agent's word alone.
+          Two independent claims about a protocol's real value, filed by
+          anyone. Oraclon fetches the true record itself and verifies
+          both — never trusting either claim's word alone. No stake, no
+          wager: filing and verifying cost only network gas.
         </p>
         <button className="landing__cta" onClick={() => navigate('/app')}>
           Enter the Archive

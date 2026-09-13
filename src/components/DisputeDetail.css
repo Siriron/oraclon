@@ -209,6 +209,13 @@
   cursor: wait;
 }
 
+.dispute-detail__no-stake-note {
+  font-size: 0.8rem;
+  color: var(--parchment-dim);
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
 .dispute-detail__relay-note {
   background: rgba(46, 42, 74, 0.35);
   border: 1px solid rgba(74, 69, 112, 0.5);

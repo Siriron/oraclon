@@ -29,6 +29,21 @@ export default function Ledger() {
         <p>Every claim ever filed, and what became of it.</p>
       </div>
 
+      <div className="ledger__how-it-works">
+        <div className="how-step">
+          <span className="how-step__num">1</span>
+          <span className="how-step__text">A person files a claim about a protocol's TVL — current for one side, historical for the other.</span>
+        </div>
+        <div className="how-step">
+          <span className="how-step__num">2</span>
+          <span className="how-step__text">The claim is recorded on both chains. No funds are staked — filing costs only gas.</span>
+        </div>
+        <div className="how-step">
+          <span className="how-step__num">3</span>
+          <span className="how-step__text">GenLayer's AI validators independently fetch the real data and verify both claims — this is the only autonomous step in the system.</span>
+        </div>
+      </div>
+
       {error && <p className="ledger__error">{error}</p>}
 
       {disputes === null && !error && (
@@ -40,7 +55,12 @@ export default function Ledger() {
 
       {disputes && disputes.length === 0 && (
         <div className="ledger__empty">
-          <p>No claims have been filed yet.</p>
+          <p className="ledger__empty-headline">No claims filed yet — this is a real, empty ledger.</p>
+          <p className="ledger__empty-body">
+            Nothing here is simulated. When a claim is filed, it will appear
+            as a real row below with its own dispute number, protocol, and
+            live status read directly from GenLayer.
+          </p>
           <Link to="/app/new" className="ledger__empty-cta">
             File the first one →
           </Link>

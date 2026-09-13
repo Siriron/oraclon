@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useOraclonGenLayer } from '../hooks/useOraclonGenLayer';
-import { useOraclonEscrow } from '../hooks/useOraclonEscrow';
+import { useOraclonRegistry } from '../hooks/useOraclonRegistry';
 import { useWallet } from '../hooks/useWallet';
+import { CLAIM_SCENARIOS } from '../data/claimScenarios';
 import {
   GENLAYER_EXPLORER_TX_URL,
   BASE_SEPOLIA_EXPLORER_TX_URL,
@@ -20,31 +21,27 @@ const STEPS = {
 const EMPTY_FORM = {
   protocolSlug: '',
   targetDate: '',
-  agentAAddress: '',
-  agentAClaimedTvlE6: '',
-  agentBAddress: '',
-  agentBClaimedTvlE6: '',
-  stakeEth: '0.01',
+  claimantAAddress: '',
+  claimedTvlAE6: '',
+  claimantBAddress: '',
+  claimedTvlBE6: '',
 };
 
-// The one already-proven combination from live testing (see project
-// notes) — offered as an explicit, opt-in fill, never as the silent
-// default, so nobody re-files the same proven dispute by accident
-// without realizing the form was pre-populated.
-const PROVEN_TEST_VALUES = {
-  protocolSlug: 'aave',
-  targetDate: '1756684800',
-  agentAClaimedTvlE6: '18405000000000000',
-  agentBClaimedTvlE6: '30250000000000000',
-};
+function microsToApprox(micros) {
+  const n = Number(micros) / 1_000_000;
+  if (n >= 1_000_000_000) return `~$${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000) return `~$${(n / 1_000_000).toFixed(1)}M`;
+  return `~$${n.toLocaleString()}`;
+}
 
 export default function NewDispute() {
   const navigate = useNavigate();
   const { account } = useWallet();
   const { createDispute: createOnGenLayer, listDisputes } = useOraclonGenLayer();
-  const { createDispute: createOnBase } = useOraclonEscrow();
+  const { fileClaim: fileOnBase } = useOraclonRegistry();
 
   const [form, setForm] = useState(EMPTY_FORM);
+  const [selectedScenarioId, setSelectedScenarioId] = useState(null);
 
   const [step, setStep] = useState(STEPS.FORM);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -52,10 +49,25 @@ export default function NewDispute() {
   const [baseResult, setBaseResult] = useState(null);
   const [disputeId, setDisputeId] = useState(null);
 
-  const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const update = (key) => (e) => {
+    setForm((f) => ({ ...f, [key]: e.target.value }));
+    // Any manual edit to a scenario-controlled field un-selects the
+    // scenario, so the picker never silently claims credit for numbers
+    // the person has since changed by hand.
+    if (['protocolSlug', 'targetDate', 'claimedTvlAE6', 'claimedTvlBE6'].includes(key)) {
+      setSelectedScenarioId(null);
+    }
+  };
 
-  const fillProvenTestValues = () => {
-    setForm((f) => ({ ...f, ...PROVEN_TEST_VALUES }));
+  const applyScenario = (scenario) => {
+    setForm((f) => ({
+      ...f,
+      protocolSlug: scenario.protocolSlug,
+      targetDate: scenario.targetDate,
+      claimedTvlAE6: scenario.agentAClaimedTvlE6,
+      claimedTvlBE6: scenario.agentBClaimedTvlE6,
+    }));
+    setSelectedScenarioId(scenario.id);
   };
 
   const handleSubmit = async (e) => {
@@ -71,17 +83,13 @@ export default function NewDispute() {
       const glResult = await createOnGenLayer({
         protocolSlug: form.protocolSlug,
         targetDate: form.targetDate,
-        agentAAddress: form.agentAAddress,
-        agentAClaimedTvlE6: form.agentAClaimedTvlE6,
-        agentBAddress: form.agentBAddress,
-        agentBClaimedTvlE6: form.agentBClaimedTvlE6,
+        agentAAddress: form.claimantAAddress,
+        agentAClaimedTvlE6: form.claimedTvlAE6,
+        agentBAddress: form.claimantBAddress,
+        agentBClaimedTvlE6: form.claimedTvlBE6,
       });
       setGenlayerResult(glResult);
 
-      // The write itself doesn't hand back a plain dispute_id from the
-      // receipt — read it back via list_disputes(), taking the highest
-      // id, which is safe here since we're the ones who just created it
-      // and dispute ids are assigned strictly increasing on GenVM.
       try {
         const all = await listDisputes();
         if (all.length > 0) {
@@ -94,25 +102,21 @@ export default function NewDispute() {
 
       setStep(STEPS.BASE_PENDING);
       try {
-        const baseResultData = await createOnBase({
-          agentA: form.agentAAddress,
-          agentB: form.agentBAddress,
-          stakeEth: form.stakeEth,
-          agentAClaimedTvlE6: form.agentAClaimedTvlE6,
-          agentBClaimedTvlE6: form.agentBClaimedTvlE6,
+        const baseResultData = await fileOnBase({
+          claimantA: form.claimantAAddress,
+          claimantB: form.claimantBAddress,
+          claimedTvlAE6: form.claimedTvlAE6,
+          claimedTvlBE6: form.claimedTvlBE6,
           protocolSlug: form.protocolSlug,
           targetDate: form.targetDate,
         });
         setBaseResult(baseResultData);
         setStep(STEPS.DONE);
       } catch (baseErr) {
-        // GenLayer's half already exists at this point — don't let the
-        // person think nothing happened and re-submit, which would
-        // create a second, disconnected GenLayer dispute.
         setErrorMsg(
-          `GenLayer recorded this dispute (id ${disputeId ?? '— check the Ledger'}), but writing to Base Sepolia failed: ${
+          `GenLayer recorded this claim (id ${disputeId ?? '— check the Ledger'}), but recording it on Base Sepolia failed: ${
             baseErr?.message || 'unknown error'
-          }. Do not re-submit this form — instead, create the matching Base Sepolia dispute separately with identical protocol_slug and target_date, or contact support with the GenLayer dispute id above.`
+          }. Do not re-submit this form — instead, file the matching Base Sepolia record separately with identical protocol_slug and target_date, or contact support with the GenLayer claim id above.`
         );
         setStep(STEPS.FAILED);
         return;
@@ -128,8 +132,9 @@ export default function NewDispute() {
       <div className="new-dispute new-dispute--done">
         <h2>Claim Filed</h2>
         <p className="new-dispute__done-copy">
-          Both halves of this dispute now exist. Each agent must stake before
-          it can be resolved.
+          Both claims are now recorded on both chains, at no cost beyond gas.
+          No funds were staked or moved. Either claim can now be verified
+          against real DefiLlama data.
         </p>
         <div className="new-dispute__receipts">
           <a
@@ -152,7 +157,7 @@ export default function NewDispute() {
         <div className="new-dispute__done-actions">
           {disputeId != null && (
             <Link to={`/app/dispute/${disputeId}`} className="new-dispute__submit new-dispute__submit--link">
-              View This Dispute
+              View This Claim
             </Link>
           )}
           <button className="new-dispute__submit" onClick={() => navigate('/app')}>
@@ -168,13 +173,60 @@ export default function NewDispute() {
       <div className="new-dispute__heading">
         <h2>File a Claim</h2>
         <p>
-          Two agents, one true record. This writes to GenLayer first, then to
-          Base Sepolia — both halves must exist before either agent can stake.
+          Two independent claims, checked against one true record. This
+          writes to GenLayer first, then to Base Sepolia. No stake, no
+          wager, no funds move at any point — filing and verifying a claim
+          costs only network gas.
         </p>
-        <button type="button" className="new-dispute__fill-test" onClick={fillProvenTestValues}>
-          Fill known-good test values (Aave)
-        </button>
       </div>
+
+      <section className="scenario-picker">
+        <div className="scenario-picker__heading">
+          <h3>Preset Test Inputs</h3>
+          <p>
+            A fixed list of ten inputs written directly into this repo's
+            source code (<code>src/data/claimScenarios.js</code>) by the
+            developer. These are not live data, not generated by any agent,
+            and not fetched from anywhere at runtime — they exist purely to
+            save you from typing values by hand while testing. Every
+            protocol slug is real and checkable on DefiLlama; the claim
+            numbers are values chosen by hand to exercise specific outcomes.
+            Selecting a row fills the protocol and claim fields below — you
+            still enter both wallet addresses yourself.
+          </p>
+        </div>
+        <div className="scenario-list">
+          <div className="scenario-list__header">
+            <span>Protocol</span>
+            <span>As of</span>
+            <span>Claim A / Claim B</span>
+            <span>Purpose</span>
+          </div>
+          {CLAIM_SCENARIOS.map((s) => (
+            <button
+              type="button"
+              key={s.id}
+              className={`scenario-row ${selectedScenarioId === s.id ? 'scenario-row--selected' : ''}`}
+              onClick={() => applyScenario(s)}
+            >
+              <span className="scenario-row__protocol">
+                {s.protocolLabel}
+                {s.liveConfirmed && <span className="scenario-row__live-badge">Live-tested</span>}
+              </span>
+              <span className="scenario-row__date">{s.targetDateLabel}</span>
+              <span className="scenario-row__claims">
+                {microsToApprox(s.agentAClaimedTvlE6)} / {microsToApprox(s.agentBClaimedTvlE6)}
+              </span>
+              <span className="scenario-row__purpose">{s.expectedOutcome}</span>
+            </button>
+          ))}
+        </div>
+        {selectedScenarioId && (
+          <p className="scenario-picker__note">
+            {CLAIM_SCENARIOS.find((s) => s.id === selectedScenarioId)?.note}
+          </p>
+        )}
+      </section>
 
       <form onSubmit={handleSubmit} className="new-dispute__form">
         <fieldset className="new-dispute__fieldset">
@@ -187,33 +239,29 @@ export default function NewDispute() {
             Target date (unix seconds)
             <input value={form.targetDate} onChange={update('targetDate')} placeholder="1756684800" required />
           </label>
+        </fieldset>
+
+        <fieldset className="new-dispute__fieldset">
+          <legend>Claimant A — claims current TVL</legend>
           <label>
-            Stake per agent (ETH)
-            <input value={form.stakeEth} onChange={update('stakeEth')} placeholder="0.01" required />
+            Address (Base Sepolia)
+            <input value={form.claimantAAddress} onChange={update('claimantAAddress')} placeholder="0x…" required />
+          </label>
+          <label>
+            Claimed TVL (micros, ×1e6)
+            <input value={form.claimedTvlAE6} onChange={update('claimedTvlAE6')} required />
           </label>
         </fieldset>
 
         <fieldset className="new-dispute__fieldset">
-          <legend>Agent A — claims current TVL</legend>
+          <legend>Claimant B — claims historical TVL</legend>
           <label>
             Address (Base Sepolia)
-            <input value={form.agentAAddress} onChange={update('agentAAddress')} placeholder="0x…" required />
+            <input value={form.claimantBAddress} onChange={update('claimantBAddress')} placeholder="0x…" required />
           </label>
           <label>
             Claimed TVL (micros, ×1e6)
-            <input value={form.agentAClaimedTvlE6} onChange={update('agentAClaimedTvlE6')} required />
-          </label>
-        </fieldset>
-
-        <fieldset className="new-dispute__fieldset">
-          <legend>Agent B — claims historical TVL</legend>
-          <label>
-            Address (Base Sepolia)
-            <input value={form.agentBAddress} onChange={update('agentBAddress')} placeholder="0x…" required />
-          </label>
-          <label>
-            Claimed TVL (micros, ×1e6)
-            <input value={form.agentBClaimedTvlE6} onChange={update('agentBClaimedTvlE6')} required />
+            <input value={form.claimedTvlBE6} onChange={update('claimedTvlBE6')} required />
           </label>
         </fieldset>
 

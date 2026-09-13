@@ -17,22 +17,6 @@
   margin-bottom: 14px;
 }
 
-.new-dispute__fill-test {
-  appearance: none;
-  border: 1px dashed rgba(232, 169, 76, 0.35);
-  background: transparent;
-  color: var(--lantern-dim);
-  font-size: 0.82rem;
-  padding: 8px 14px;
-  border-radius: 4px;
-  transition: color 0.2s ease, border-color 0.2s ease;
-}
-
-.new-dispute__fill-test:hover {
-  color: var(--lantern-bright);
-  border-color: var(--lantern);
-}
-
 .new-dispute__form {
   display: flex;
   flex-direction: column;
@@ -163,4 +147,158 @@
   display: inline-block;
   text-decoration: none;
   background: transparent;
+}
+
+
+/* ---------------------------------------------------------------------
+   Preset test inputs — a static reference table, deliberately still.
+   No animation, no motion, no card shape that echoes the live Agent
+   A / Agent B claim display used on the dispute detail page. This is a
+   plain list of fixed values a developer wrote into the repo — it
+   should read like a printed reference sheet, not a live feed or agent
+   output. See src/data/claimScenarios.js for what's actually in it.
+--------------------------------------------------------------------- */
+
+.scenario-picker {
+  margin-bottom: 32px;
+}
+
+.scenario-picker__heading {
+  margin-bottom: 18px;
+}
+
+.scenario-picker__heading h3 {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--lantern-bright);
+  margin-bottom: 6px;
+}
+
+.scenario-picker__heading p {
+  color: var(--parchment-dim);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  max-width: 68ch;
+}
+
+.scenario-picker__heading code {
+  background: rgba(21, 13, 7, 0.6);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--lantern-bright);
+  font-size: 0.8rem;
+}
+
+.scenario-list {
+  border: 1px solid rgba(232, 169, 76, 0.16);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.scenario-list__header {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr 1.3fr 1.7fr;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(21, 13, 7, 0.5);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--parchment-dim);
+  border-bottom: 1px solid rgba(232, 169, 76, 0.16);
+}
+
+.scenario-row {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr 1.3fr 1.7fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(43, 27, 16, 0.35);
+  border: none;
+  border-bottom: 1px solid rgba(232, 169, 76, 0.1);
+  color: var(--parchment);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.scenario-list .scenario-row:last-child {
+  border-bottom: none;
+}
+
+.scenario-row:hover {
+  background: rgba(232, 169, 76, 0.08);
+}
+
+.scenario-row--selected {
+  background: rgba(232, 169, 76, 0.14);
+  box-shadow: inset 2px 0 0 var(--lantern);
+}
+
+.scenario-row__protocol {
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scenario-row__live-badge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--verified);
+  background: rgba(111, 174, 102, 0.14);
+  border: 1px solid rgba(111, 174, 102, 0.35);
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.scenario-row__date {
+  font-size: 0.82rem;
+  color: var(--parchment-dim);
+}
+
+.scenario-row__claims {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--parchment);
+}
+
+.scenario-row__purpose {
+  font-size: 0.78rem;
+  color: var(--parchment-dim);
+  line-height: 1.4;
+}
+
+.scenario-picker__note {
+  margin-top: 14px;
+  font-size: 0.82rem;
+  color: var(--parchment-dim);
+  border-left: 2px solid var(--lantern-dim);
+  padding-left: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .scenario-list__header {
+    display: none;
+  }
+  .scenario-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .scenario-row__date::before {
+    content: 'As of ';
+    color: var(--parchment-dim);
+  }
 }
