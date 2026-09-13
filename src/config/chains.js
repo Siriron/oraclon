@@ -6,8 +6,16 @@
 export const GENLAYER_CONTRACT_ADDRESS =
   '0x1078D2FF17616482aa115B1eE910269830270d62';
 
-export const ESCROW_CONTRACT_ADDRESS =
-  '0xD3dDF66A0EefD3fb2f0D0DF4874Fbc9C1Fff702f';
+// CONFIRMED DEPLOYED: OraclonRegistry.sol on Base Sepolia, deploy tx
+// visible at https://sepolia.basescan.org/address/0xcE066B8e55572b1f9E6e223605d9362Af345c3Eb#code
+// Before trusting this address for real use, verify on BaseScan's "Read
+// Contract" tab that calling relayer() returns
+// 0xB1d236988A76b3E978dE66B1c45278C6d17FA8BA — this was not
+// independently verified by Claude (no network access in this
+// environment to check bytecode or constructor args), so confirm it
+// yourself once before relying on it.
+export const REGISTRY_CONTRACT_ADDRESS =
+  '0xcE066B8e55572b1f9E6e223605d9362Af345c3Eb';
 
 export const GENLAYER_EXPLORER_ADDRESS_URL = (addr) =>
   `https://explorer-studio.genlayer.com/address/${addr}`;
@@ -37,97 +45,68 @@ export const BASE_SEPOLIA_CONFIG = {
   blockExplorerUrls: ['https://sepolia.basescan.org'],
 };
 
-// Minimal ABI for OraclonEscrow.sol — only what the frontend calls.
-export const ESCROW_ABI = [
+// Minimal ABI for OraclonRegistry.sol — only what the frontend calls.
+// No payable functions anywhere: this contract never holds value.
+export const REGISTRY_ABI = [
   {
     type: 'function',
-    name: 'createDispute',
+    name: 'fileClaim',
     stateMutability: 'nonpayable',
     inputs: [
-      { name: 'agentA', type: 'address' },
-      { name: 'agentB', type: 'address' },
-      { name: 'stakeAmount', type: 'uint256' },
-      { name: 'agentAClaimedTvlE6', type: 'uint256' },
-      { name: 'agentBClaimedTvlE6', type: 'uint256' },
+      { name: 'claimantA', type: 'address' },
+      { name: 'claimantB', type: 'address' },
+      { name: 'claimedTvlAE6', type: 'uint256' },
+      { name: 'claimedTvlBE6', type: 'uint256' },
       { name: 'protocolSlug', type: 'string' },
       { name: 'targetDate', type: 'uint256' },
     ],
-    outputs: [{ name: 'disputeId', type: 'uint256' }],
+    outputs: [{ name: 'claimId', type: 'uint256' }],
   },
   {
     type: 'function',
-    name: 'stakeAsAgentA',
-    stateMutability: 'payable',
-    inputs: [{ name: 'disputeId', type: 'uint256' }],
-    outputs: [],
-  },
-  {
-    type: 'function',
-    name: 'stakeAsAgentB',
-    stateMutability: 'payable',
-    inputs: [{ name: 'disputeId', type: 'uint256' }],
-    outputs: [],
-  },
-  {
-    type: 'function',
-    name: 'getDisputeCore',
+    name: 'getClaimCore',
     stateMutability: 'view',
-    inputs: [{ name: 'disputeId', type: 'uint256' }],
+    inputs: [{ name: 'claimId', type: 'uint256' }],
     outputs: [
       { name: 'id', type: 'uint256' },
-      { name: 'agentA', type: 'address' },
-      { name: 'agentB', type: 'address' },
-      { name: 'stakeAmount', type: 'uint256' },
+      { name: 'claimantA', type: 'address' },
+      { name: 'claimantB', type: 'address' },
       { name: 'status', type: 'uint8' },
-      { name: 'createdAt', type: 'uint256' },
-      { name: 'resolvedAt', type: 'uint256' },
+      { name: 'filedAt', type: 'uint256' },
+      { name: 'verifiedAt', type: 'uint256' },
     ],
   },
   {
     type: 'function',
-    name: 'getDisputeClaims',
+    name: 'getClaimValues',
     stateMutability: 'view',
-    inputs: [{ name: 'disputeId', type: 'uint256' }],
+    inputs: [{ name: 'claimId', type: 'uint256' }],
     outputs: [
-      { name: 'agentAClaimedTvlE6', type: 'uint256' },
-      { name: 'agentBClaimedTvlE6', type: 'uint256' },
+      { name: 'claimedTvlAE6', type: 'uint256' },
+      { name: 'claimedTvlBE6', type: 'uint256' },
       { name: 'protocolSlug', type: 'string' },
       { name: 'targetDate', type: 'uint256' },
     ],
   },
   {
     type: 'function',
-    name: 'getDisputeVerdict',
+    name: 'getClaimVerdict',
     stateMutability: 'view',
-    inputs: [{ name: 'disputeId', type: 'uint256' }],
+    inputs: [{ name: 'claimId', type: 'uint256' }],
     outputs: [
-      { name: 'agentAAccuracy', type: 'uint8' },
-      { name: 'agentBAccuracy', type: 'uint8' },
+      { name: 'resultA', type: 'uint8' },
+      { name: 'resultB', type: 'uint8' },
       { name: 'reasoningSummary', type: 'string' },
     ],
   },
   {
     type: 'function',
-    name: 'getPendingBalance',
-    stateMutability: 'view',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'withdraw',
-    stateMutability: 'nonpayable',
-    inputs: [],
-    outputs: [],
-  },
-  {
-    type: 'function',
-    name: 'nextDisputeId',
+    name: 'nextClaimId',
     stateMutability: 'view',
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
   },
 ];
 
-export const ESCROW_STATUS_LABELS = ['Created', 'AgentAStaked', 'BothStaked', 'Resolved'];
-export const ACCURACY_LABELS = ['Unset', 'Accurate', 'Inaccurate'];
+export const REGISTRY_STATUS_LABELS = ['Filed', 'Verified'];
+export const RESULT_LABELS = ['Unset', 'Accurate', 'Inaccurate'];
