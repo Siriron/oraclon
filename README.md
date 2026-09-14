@@ -167,7 +167,7 @@ LICENSE               MIT
 <div align="center">
 
 ![Tested](https://img.shields.io/badge/GenVM%20contract-live%20tested-brightgreen?style=flat-square)
-![Deployed](https://img.shields.io/badge/OraclonRegistry.sol-deployed%2C%20not%20yet%20live%20tested-yellow?style=flat-square)
+![Tested](https://img.shields.io/badge/OraclonRegistry.sol-live%20tested%20end%20to%20end-brightgreen?style=flat-square)
 
 </div>
 
@@ -178,7 +178,8 @@ the full ten-item nondet safety audit. This contract's judgment logic
 is unaffected by the removal of staking on the Solidity side — it never
 handled funds in the first place.
 
-**`OraclonRegistry.sol` is deployed to Base Sepolia** at
+**`OraclonRegistry.sol` is deployed to Base Sepolia and fully
+live-tested end to end** at
 [`0xcE066B8e55572b1f9E6e223605d9362Af345c3Eb`](https://sepolia.basescan.org/address/0xcE066B8e55572b1f9E6e223605d9362Af345c3Eb#code),
 replacing a previous contract, `OraclonEscrow.sol`, which required both
 claimants to stake ETH and redistributed the stakes based on the
@@ -186,11 +187,14 @@ verdict. That version's full lifecycle (stake, resolve, relay, settle)
 was live-tested and confirmed working — but on reflection, that
 structure amounted to two parties wagering money on who was factually
 correct, which is not a legitimate basis for either party to win the
-other's money. It has been removed. **The new deployment has not yet
-been live-tested** — no `fileClaim` or `recordVerdict` call has been
-exercised against it. Before relying on this address, confirm on
-BaseScan's "Read Contract" tab that `relayer()` and `owner()` return the
-intended addresses.
+other's money. It has been removed. `fileClaim` and `recordVerdict` are
+both confirmed live — a real claim filed on both chains, verified on
+GenLayer, and its verdict recorded on Base Sepolia by the correct
+`relayer` wallet, with `onlyRelayer`'s access control genuinely
+exercised (not just present in the source). `relayer()` and `owner()`
+were independently confirmed on BaseScan to return the intended
+addresses. Full details, including transaction hashes, are in
+`docs/deployment.md`.
 
 <br />
 
