@@ -44,64 +44,98 @@ reasons of principle, not because of a technical defect — see
 `contracts/OraclonRegistry.sol`'s own docstring and
 `docs/architecture.md` for the full reasoning.
 
-`OraclonRegistry.sol` as it exists now:
+`OraclonRegistry.sol` as it exists now — **fully live-tested end to
+end**:
 - Compiles cleanly against the same Solidity version (`^0.8.20`) and
   follows the same split-view pattern (`getClaimCore` /
   `getClaimValues` / `getClaimVerdict`) that avoided the prior
   contract's "stack too deep" issue.
 - **Deployed to Base Sepolia** at
-  `0xcE066B8e55572b1f9E6e223605d9362Af345c3Eb`. This address was not
-  independently verified by Claude — no network access was available to
-  check the deployed bytecode or constructor arguments. Before relying
-  on this address, confirm on BaseScan's "Read Contract" tab that
-  `relayer()` returns the intended relayer address and `owner()` returns
-  the intended deployer address.
-- **Has not been live-tested at all** — no `fileClaim` call, no
-  `recordVerdict` call, nothing has been exercised against this
-  deployment yet. Do not treat this as inheriting the previous
-  contract's live-tested status; it is new code with a different ABI and
-  constructor, and needs its own testing pass before being treated as
-  confirmed.
+  `0xcE066B8e55572b1f9E6e223605d9362Af345c3Eb`, confirmed via BaseScan's
+  "Read Contract" tab: `relayer()` returns
+  `0xB1d236988A76b3E978dE66B1c45278C6d17FA8BA` and `owner()` returns
+  `0x40edE296E01e1D57b25697b07D0f1c69077843D0`, matching the intended
+  addresses exactly.
+- **`fileClaim` confirmed live** — two real transactions on Base Sepolia
+  (blocks 46754921 and 46793507), both from `0x40edE296...`, both
+  `Success`. `fileClaim` has no access restriction by design (any
+  address can file a claim), so both succeeding is expected and
+  correctly demonstrates that half of the contract.
+- **`recordVerdict` confirmed live** — real transaction
+  `0xb6b528f816f0840aa8cf7ef6c462f3ef0c53a456907ed5b8c7c41b56f6357c42`
+  (block 46794234), called by `0xB1d236988...` (the registered
+  `relayer`), `Success`. This is genuine positive proof that
+  `onlyRelayer`'s access control works as written on this deployment —
+  the transaction only succeeds because the caller matched `relayer`
+  exactly; it is not merely "no error was thrown," it's a real state
+  transition from `Filed` to `Verified` confirmed both in the
+  transaction receipt and by the app's own UI showing "Base Sepolia:
+  Verified" and the matching transaction hash immediately after.
+- The one bug found along the way — `recordVerdict` missing from
+  `REGISTRY_ABI` in `src/config/chains.js`, a frontend wiring gap, not
+  a contract defect — was fixed before this successful call, and the
+  fix is what's reflected in the current repo.
+
+### Full lifecycle: complete and confirmed
+
+`fileClaim` → `resolve_dispute` (GenLayer) → `recordVerdict`, with the
+app's own cross-chain parameter check confirming agreement at every
+step, has now been run for real, on live Base Sepolia and GenLayer
+StudioNet deployments, with no funds moving at any point and no private
+key ever touching a file. This is the first point at which the
+Solidity-side rewrite (removing staking, replacing the standalone
+relayer script with a wallet-signed action) can be called fully proven
+rather than just written and reviewed.
 
 ### Relaying — moved into the app, no script, no private key
 
 The standalone `relay.js` script and its `.env`-based
 `RELAYER_PRIVATE_KEY` have been removed entirely. Recording a verdict on
-Base Sepolia is now a button (`useOraclonRegistry`'s `recordVerdict`)
+Base Sepolia is a button (`useOraclonRegistry`'s `recordVerdict`)
 directly on the claim's page in the app, signed by whichever wallet is
 connected in the browser — the same pattern `fileClaim` already used.
 No private key is stored, read from a file, or otherwise handled by
-this app's code at any point. This has not yet been exercised against a
-live network, since that requires `OraclonRegistry.sol` to be deployed
-first.
+this app's code at any point. **Confirmed live**: transaction
+`0xb6b528f816f0840aa8cf7ef6c462f3ef0c53a456907ed5b8c7c41b56f6357c42`,
+called from the `relayer` wallet's browser session, succeeded.
 
-### Frontend — updated for the new contract, not yet exercised live
+### Frontend — confirmed live end to end
 
 `NewDispute.jsx` and `DisputeDetail.jsx` were rewritten to remove every
 stake input and staking-specific status label, and now call
 `useOraclonRegistry`'s non-payable `fileClaim` and wallet-signed
 `recordVerdict` instead of the old `useOraclonEscrow`'s payable staking
 calls and the standalone relayer script. The GenLayer-side flow
-(`useOraclonGenLayer`) is unchanged and unaffected. The Base
-Sepolia-side flow cannot be exercised in a real browser until
-`OraclonRegistry.sol` is deployed and its address is filled in.
+(`useOraclonGenLayer`) is unchanged and unaffected. Both the GenLayer
+and Base Sepolia sides have now been exercised together in a real
+browser: a claim filed on both chains, verified on GenLayer, and its
+verdict recorded on Base Sepolia by the correct relayer wallet — the
+app's own UI confirmed "Base Sepolia: Verified" with the exact matching
+transaction hash immediately after.
 
-## What "done" will look like
+## Full lifecycle: confirmed, this checklist is complete
 
 1. ~~Deploy `OraclonRegistry.sol` to Base Sepolia, passing the address of
    whichever wallet should hold the `relayer` role as the constructor
    argument.~~ Done —
    [`0xcE066B8e55572b1f9E6e223605d9362Af345c3Eb`](https://sepolia.basescan.org/address/0xcE066B8e55572b1f9E6e223605d9362Af345c3Eb#code).
-   Verify `relayer()`/`owner()` on BaseScan before relying on it (see
-   above).
+   Confirmed on BaseScan: `relayer()` returns
+   `0xB1d236988A76b3E978dE66B1c45278C6d17FA8BA`, `owner()` returns
+   `0x40edE296E01e1D57b25697b07D0f1c69077843D0`.
 2. ~~Update `REGISTRY_CONTRACT_ADDRESS` in `src/config/chains.js`.~~ Done.
-3. Run the full lifecycle for real: file a claim on both chains, verify
-   on GenLayer, connect the `relayer` wallet and click "Record Verdict
-   on Base Sepolia," confirm the record on Base Sepolia shows the
-   correct result — with no value ever moving at any step, and no
-   private key ever entering a file. **Not yet done.**
-4. Update this file's Status section once that's confirmed, the same
-   way this document has been kept honest through every change so far.
+3. ~~File a claim on both chains.~~ Done — two confirmed `fileClaim`
+   transactions on Base Sepolia, both `Success`.
+4. ~~Verify on GenLayer.~~ Done — GenLayer side confirmed resolving
+   correctly.
+5. ~~Connect the `relayer` wallet and click "Record Verdict on Base
+   Sepolia."~~ Done — transaction
+   `0xb6b528f816f0840aa8cf7ef6c462f3ef0c53a456907ed5b8c7c41b56f6357c42`,
+   `Success`, called by the correct `relayer` address. The first
+   attempt at this step surfaced a real frontend bug (`recordVerdict`
+   missing from `REGISTRY_ABI`), which was fixed before this successful
+   run.
+6. ~~Update this file's Status section once that's confirmed.~~ Done —
+   this is that update.
 
 ## Everything that runs in this system is triggered by a person, from their own wallet
 
