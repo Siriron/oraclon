@@ -106,6 +106,18 @@ export const REGISTRY_ABI = [
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
   },
+  {
+    type: 'function',
+    name: 'recordVerdict',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'claimId', type: 'uint256' },
+      { name: 'resultARaw', type: 'uint8' },
+      { name: 'resultBRaw', type: 'uint8' },
+      { name: 'reasoningSummary', type: 'string' },
+    ],
+    outputs: [],
+  },
 ];
 
 export const REGISTRY_STATUS_LABELS = ['Filed', 'Verified'];
